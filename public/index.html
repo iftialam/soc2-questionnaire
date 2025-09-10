@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOC 2 Compliance Maturity Questionnaire</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        h1, h2 { color: #333; }
+        .form-container, .report-container { max-width: 800px; margin: auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .question { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        select, input[type="text"], input[type="email"] { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .report-container { display: none; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #007bff; color: white; }
+        .dashboard { margin-top: 20px; }
+        canvas { max-width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>SOC 2 Compliance Maturity Questionnaire</h1>
+        <form id="questionnaireForm">
+            <label>Business Name:</label>
+            <input type="text" id="businessName" required>
+            <label>Email:</label>
+            <input type="email" id="email" required>
+
+            <h2>Security</h2>
+            <div class="question">
+                <label>1. Control Environment: Governance structure, roles, and ethical policies?</label>
+                <select name="q1" required>
+                    <option value="">Select Maturity (0-4)</option>
+                    <option value="0">0 - No controls</option>
+                    <option value="1">1 - Initial</option>
+                    <option value="2">2 - Managed</option>
+                    <option value="3">3 - Defined</option>
+                    <option value="4">4 - Optimized</option>
+                </select>
+            </div>
+            <!-- Repeat for all 24 questions (abridged for brevity) -->
+            <div class="question">
+                <label>2. Communication and Information: Policy communication processes?</label>
+                <select name="q2" required><option value="">Select</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+            </div>
+            <!-- Add remaining questions (q3 to q24) similarly, grouped by category -->
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <div class="report-container" id="reportContainer">
+        <h1>Executive Summary Report</h1>
+        <div id="reportContent"></div>
+        <div class="dashboard">
+            <h2>Maturity Dashboard</h2>
+            <canvas id="maturityChart"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.getElementById('questionnaireForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                businessName: formData.get('businessName'),
+                email: formData.get('email'),
+                responses: {}
+            };
+            for (let i = 1; i <= 24; i++) {
+                data.responses[`q${i}`] = parseInt(formData.get(`q${i}`));
+            }
+
+            const response = await fetch('/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const report = await response.json();
+
+            const reportContainer = document.getElementById('reportContainer');
+            reportContainer.style.display = 'block';
+            document.getElementById('reportContent').innerHTML = report.html;
+
+            // Render Chart.js dashboard
+            const ctx = document.getElementById('maturityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Security', 'Availability', 'Processing Integrity', 'Confidentiality', 'Privacy'],
+                    datasets: [{
+                        label: 'Maturity Score',
+                        data: report.categoryScores,
+                        backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8'],
+                        borderColor: ['#0056b3', '#218838', '#e0a800', '#c82333', '#117a8b'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, max: 4, title: { display: true, text: 'Maturity Level' } }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
